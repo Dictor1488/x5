@@ -1,0 +1,1 @@
+(function(){'use strict';var count=document.getElementById('x5-value');if(count)count.textContent='—';/* TODO: Implement real WoT GameFace ViewModel binding. */})();
