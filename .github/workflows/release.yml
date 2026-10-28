@@ -1,0 +1,51 @@
+name: Build and prerelease INQ x5
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python 2.7
+        shell: pwsh
+        run: |
+          choco install python2 -y --no-progress
+          $candidates = @('C:\Python27\python.exe', 'C:\tools\python2\python.exe', 'C:\ProgramData\chocolatey\bin\python2.exe')
+          $py27 = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $py27) { throw 'Python 2.7 not found' }
+          "PYTHON27=$py27" >> $env:GITHUB_ENV
+      - name: Validate
+        shell: pwsh
+        run: |
+          python -m json.tool build.json | Out-Null
+          python -m json.tool resources/in/gui/gen_resources/tv.dictor.x5.json | Out-Null
+          node --check resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.js
+      - name: Build
+        shell: pwsh
+        run: |
+          $version = (Get-Content build.json -Raw | ConvertFrom-Json).info.version
+          python build.py --python27 "$env:PYTHON27" --version "$version"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: me.inq.x5-experimental
+          path: build/me.inq.x5.wotmod
+      - name: Publish experimental prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-alpha.1
+          name: INQ x5 0.1.0-alpha.1 experimental
+          prerelease: true
+          make_latest: false
+          body: |
+            Experimental only. GameFace ViewModel bridge is not implemented.
+            In-game counter is non-functional. Do not distribute as ready.
+          files: build/me.inq.x5.wotmod
+          fail_on_unmatched_files: true
