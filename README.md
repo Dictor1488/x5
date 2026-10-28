@@ -1,34 +1,27 @@
-# x5 — World of Tanks ×5 XP counter (GameFace prototype)
+# INQ x5 — GameFace XP counter (experimental)
 
-Work-in-progress rewrite of the legacy SkaajParadox `me.sky.x5counter_1.0.2.wotmod` using a GameFace UI instead of Flash/SWF.
+**Status: prototype; not working in-game yet.** Do not install or distribute as a finished mod. The original SkaajParadox Flash implementation was inspected only partially. Token aggregation is implemented, but there is no live Python-to-GameFace ViewModel bridge or verified hangar window registration.
 
-## Status: NOT installable yet
+## Structure (same convention as INQ Custom HPBar)
 
-The token aggregation code is implemented, and a basic GameFace overlay is authored, **but the Python → GameFace live ViewModel data bridge is not implemented**. The widget therefore displays `—` instead of a number. The hook and injection API have not been validated in WoT 2.4.1. Do not distribute this as a working `.wotmod`.
+- `build.json` — package metadata and version.
+- `build.py` — compile source to Python 2.7 `.pyc` and package `ZIP_STORED` `.wotmod`.
+- `python/scripts/client/gui/mods/` — Python mod entry point and token counter.
+- `resources/in/gui/gameface/mods/x5/X5Counter/` — GameFace HTML, JS and CSS.
+- `resources/in/gui/gen_resources/tv.dictor.x5.json` — GameFace resource map.
+- `.github/workflows/release.yml` — Windows GitHub Actions build, artifact, and experimental prerelease publication.
 
-## Source investigation
+## Build
 
-The supplied original archive contains Python 2.7 bytecode and a legacy SWF. The bytecode references `battle_bonus_x5`, `IItemsCache`, `getTokens`, `count`, and `expire`. Complete original source was not recovered. This repository is a new implementation based on those limited observations.
+`python build.py --python27 C:/Python27/python.exe`
 
-## Structure
+The GitHub workflow runs on a push of a `v*` tag or by manual `workflow_dispatch`. Release `v0.1.0-alpha.1` is explicitly experimental. **The workflow was committed but has not been run or verified.**
 
-- `src/x5_counter.py` — sums active, non-expired x5 token quantities; Python 2.7-compatible.
-- `src/mod_x5.py` — initial RandomHangar hook and GameFace injection concept. **Unverified**.
-- `res/gui/gameface/mods/x5/x5.js` and `x5.css` — small ×5 widget, waiting for a live data bridge.
-- `tests/test_counter.py` — token counting unit tests.
+## Required before a usable release
 
-## Outstanding
+1. Confirm lobby GameFace window class and registration against the game client.
+2. Bind the Python token count to a real GameFace model and subscribe on JS side.
+3. Update after token changes and on hangar entry; clean up subscriptions.
+4. Verify full install, live display and return from battle on WoT 2.4.1.
 
-1. Confirm target client API, lobby/hangar lifecycle and OpenWG `gf_mod_inject` integration.
-2. Create an actual GameFace model field for the count and subscribe to it in JS.
-3. Trigger refresh on inventory updates, hangar entry and post-battle return.
-4. Handle teardown and error recovery.
-5. Compile for the WoT Python runtime and build/test a real `.wotmod`.
-
-## Tests
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-Legacy reference: SkaajParadox. No original SWF or binary redistribution.
+Legacy reference: SkaajParadox x5 counter. No original binaries included.
