@@ -29,3 +29,10 @@ Requires compatible WoT client **and OpenWG.Gameface** to register the resource 
 **Unverified:** No actual client-side test has been run. The hangar class path, OpenWG availability, and token payload layout require checking against the installed client. Live refresh currently happens on creating the garage view; event-driven token changes during an already-open hangar are not implemented. The GitHub release workflow has not yet been run; no release asset has been verified.
 
 No Flash/SWF, no settings JSON, no original binary redistribution.
+
+## Important limitations of 0.1.6
+
+- The WoT GameFace drag input path has not been verified in game. The reference ArmorCalculator has **no mouse dragging implementation**; it only offers tested scaled surface positioning.
+- Stored positions are clamped on loading, when the view is ready and while dragging. To recover from an unreachable position, delete `mods/configs/inq/x5.json`.
+- `WindowFlags.WINDOW` may interfere with focus. Correct per-page visibility and window stacking still require an actual WoT client integration test; do not call this a stable release yet.
+- The latest supplied log shows repeated `Size calculation timeout` for older builds. Confirm v0.1.6 emits exactly one X5Window before further changes.
