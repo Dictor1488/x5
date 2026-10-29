@@ -26,8 +26,8 @@ jobs:
         shell: pwsh
         run: |
           python -m json.tool build.json | Out-Null
-          python -m json.tool resources/in/gui/gen_resources/tv.dictor.x5.json | Out-Null
-          node --check resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.js
+          Get-Content resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.js -Raw | node --input-type=module --check
+          if ($LASTEXITCODE -ne 0) { throw 'GameFace JS syntax error' }
       - name: Build
         shell: pwsh
         run: |
@@ -47,6 +47,7 @@ jobs:
           make_latest: true
           body: |
             INQ x5 GameFace counter for World of Tanks.
-            First test build. In-game compatibility is not yet verified.
+            Garage document injection using OpenWG gf_mod_inject; Ctrl+drag.
+            Requires OpenWG Gameface. Client-side compatibility remains unverified.
           files: build/me.inq.x5.wotmod
           fail_on_unmatched_files: true
