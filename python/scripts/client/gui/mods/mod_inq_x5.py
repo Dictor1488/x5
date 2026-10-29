@@ -15,6 +15,7 @@ LOG = logging.getLogger('INQ.x5')
 CONFIG = os.path.join('mods', 'configs', 'inq', 'x5.json')
 COUI = 'coui://gui/gameface/mods/x5/X5Counter'
 _active = None
+_selected_host = None
 _patched = []
 _subscribed = False
 _revision = 0
@@ -149,14 +150,19 @@ def _subscribe():
         LOG.exception('Unable to subscribe to item cache')
 
 
-def _mount(presenter):
-    global _active
+def _mount(presenter, name):
+    global _active, _selected_host
     host = presenter.getViewModel()
     if host is None:
         return
-    if _active is not None and _active[0] is host:
-        _refresh()
-        return
+    if _active is not None:
+        if _active[0] is host:
+            _refresh()
+            return
+        # One injected host per garage mount. The same presenter may remount
+        # after a battle with a new VM; other presenters must not duplicate it.
+        if _selected_host != name:
+            return
     # OpenWG's ModInjectModel is single-owner per subview. Never replace another mod.
     try:
         if '"ModInjectModel"' in host.proxy.toString():
@@ -173,6 +179,7 @@ def _mount(presenter):
         model = X5Data()
         host._addViewModelProperty('x5Data', model)
         _active = (host, model)
+        _selected_host = name
         _subscribe()
         _refresh()
     except Exception:
@@ -188,18 +195,14 @@ def _install():
             if getattr(presenter, '_inq_x5_hooked', False):
                 continue
             original = presenter._onLoading
-            def wrapper(self, *args, **kwargs):
-                result = original(self, *args, **kwargs)
-                _mount(self)
-                return result
             # Keep original bound to each wrapper, not last value of loop.
-            def make_wrapper(fn):
+            def make_wrapper(fn, presenter_name):
                 def wrapped(self, *args, **kwargs):
                     result = fn(self, *args, **kwargs)
-                    _mount(self)
+                    _mount(self, presenter_name)
                     return result
                 return wrapped
-            presenter._onLoading = make_wrapper(original)
+            presenter._onLoading = make_wrapper(original, class_name)
             presenter._inq_x5_hooked = True
             _patched.append((presenter, original))
         except Exception:
@@ -211,7 +214,7 @@ def init():
 
 
 def fini():
-    global _active, _subscribed
+    global _active, _subscribed, _selected_host
     for presenter, original in _patched:
         presenter._onLoading = original
         presenter._inq_x5_hooked = False
@@ -223,3 +226,4 @@ def fini():
             pass
         _subscribed = False
     _active = None
+    _selected_host = None
