@@ -1,38 +1,43 @@
-# INQ x5 Counter — GameFace garage mod
+# INQ x5 — WoT garage XP bonus counter
 
-Experimental World of Tanks 2.4.x mod, based on x5-token identifiers identified in the SkaajParadox legacy archive.
+Single-Python-file garage widget for World of Tanks 2.4.x. Requires **net.openwg.gameface**.
 
-## Layout
+## Architecture (rewritten)
 
-- `python/scripts/client/gui/mods/mod_inq_x5.py` — the **only Python file**; token counting, hangar lifecycle, GameFace ViewModel and window management.
-- `resources/in/gui/gameface/mods/x5/X5Counter/` — HTML/CSS/JS UI.
-- `resources/in/gui/gen_resources/tv.dictor.x5.json` — **required** OpenWG GameFace layout registration (not user settings).
-- `build.json` — **build-only** metadata (id, name, version). It is not needed at runtime and is not bundled inside the .wotmod.
-- `build.py` — Python 2.7 bytecode compilation and uncompressed .wotmod packaging.
-- `.github/workflows/release.yml` — standard GitHub Release build workflow.
+The old floating Wulf WINDOW implementation was removed. The current implementation follows the public 14th_ua MoE Calculator garage widget:
 
-## Building
+1. Patch a hangar sub-view presenter's `_onLoading` (not `RandomHangar`).
+2. Attach `openwg_gameface.gf_mod_inject` to the sub-view ViewModel; never overwrite another mod's `ModInjectModel`.
+3. Add nested `x5Data` Wulf ViewModel with the token count and placement.
+4. Render the widget inside the **existing garage GameFace document**, so it has no independent Wulf focus/stacking/window-position semantics.
+5. Hold **Ctrl + left mouse button** over the widget to move it. Mouse handling uses document capture, client viewport coordinates and root-owned hit testing. The DOM moves during the gesture; only the final x/y + viewport dimensions are sent to Python.
+6. The widget is hidden on routes other than the plain garage, using the client's lobby state machine.
+7. Store the viewport-relative pinned coordinates in `mods/configs/inq/x5.json`. On resolution changes the JS rescales and clamps them.
 
-Run **GitHub → Actions → Build and prerelease INQ x5 → Run workflow**; it compiles the one Python file using Python 2.7 and publishes `me.inq.x5.wotmod` as a standard GitHub Release (v0.1.0).
+The original standalone HTML and `gen_resources` JSON registration were deliberately removed; they are **not required** for injection into an already-registered native hangar document.
 
-For local builds: `python build.py --python27 C:/Python27/python.exe`.
+## Structure
 
-## Testing
+- `python/scripts/client/gui/mods/mod_inq_x5.py` — **one Python file**
+- `resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.js` — OpenWG ModelObserver, DOM widget, Ctrl-drag
+- `resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.css` — scoped widget styling only
+- `build.json`, `build.py` — package metadata and Python 2.7 .wotmod builder
+- `.github/workflows/release.yml` — normal GitHub Release workflow
 
-Requires compatible WoT client **and OpenWG.Gameface** to register the resource map.
+## Sources inspected
 
-1. Install the resulting `me.inq.x5.wotmod` in `mods/<game-version>/`.
-2. Enter garage. Look for a small GameFace overlay showing `×5 XP` and current token count.
-3. If absent, inspect `python.log` for `INQ.x5`, `Unable to install hangar hooks`, `Cannot create x5 GameFace window`, or resource registration issues.
-4. Compare count with actual x5 reserves; test after return from battle.
+- [MoE Calculator garage feature notes](https://github.com/drizzer14/moe-calculator/blob/main/.claude/skills/moe-garage/SKILL.md)
+- [MoE Calculator entry point](https://github.com/drizzer14/moe-calculator/blob/main/src/res/scripts/client/gui/mods/mod_moe_calculator.py)
+- [MoE Calculator OpenWG bridge](https://github.com/drizzer14/moe-calculator/blob/main/src/res/scripts/client/moe_calculator/bridge/gameface_bridge.py)
+- [MoE Calculator garage JS](https://github.com/drizzer14/moe-calculator/blob/main/src/res/gui/gameface/mods/14th_ua/MoECalculator/MoECalculator.js)
+- Own projects: `ArmorCalculator`, `weather`, `HPBARCustom`.
 
-**Unverified:** No actual client-side test has been run. The hangar class path, OpenWG availability, and token payload layout require checking against the installed client. Live refresh currently happens on creating the garage view; event-driven token changes during an already-open hangar are not implemented. The GitHub release workflow has not yet been run; no release asset has been verified.
+## Build
 
-No Flash/SWF, no settings JSON, no original binary redistribution.
+`python build.py --python27 C:/Python27/python.exe`, or run the GitHub Actions workflow.
 
-## Important limitations of 0.1.6
+## Verification status
 
-- The WoT GameFace drag input path has not been verified in game. The reference ArmorCalculator has **no mouse dragging implementation**; it only offers tested scaled surface positioning.
-- Stored positions are clamped on loading, when the view is ready and while dragging. To recover from an unreachable position, delete `mods/configs/inq/x5.json`.
-- `WindowFlags.WINDOW` may interfere with focus. Correct per-page visibility and window stacking still require an actual WoT client integration test; do not call this a stable release yet.
-- The latest supplied log shows repeated `Size calculation timeout` for older builds. Confirm v0.1.6 emits exactly one X5Window before further changes.
+**Source/API implementation is grounded in working reference code, but not yet validated in an actual WoT client for this mod.** The build workflow must pass before releasing. No claim of successful in-game integration is made.
+
+If a sub-view's OpenWG injection slot is occupied by another mod, x5 yields rather than clobbering it. This may hide x5 when all candidate sub-view slots are occupied.
