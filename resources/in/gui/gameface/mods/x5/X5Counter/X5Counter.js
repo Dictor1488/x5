@@ -2,20 +2,24 @@
   'use strict';
   var root = document.getElementById('x5-counter-widget');
   var label = document.getElementById('x5-value');
-  var callbackId = null;
-  var held = false, lastX = 0, lastY = 0;
+  var callbackId = null, dragging = false;
+  function call(name, data) {
+    if (!window.model || typeof window.model[name] !== 'function') return;
+    if (data === undefined) window.model[name]();
+    else window.model[name](data);
+  }
   function refresh() {
     if (label) label.textContent = window.model && window.model.count != null ?
       String(window.model.count) : '—';
   }
-  function resize() {
-    if (window.viewEnv && viewEnv.resizeViewPx) viewEnv.resizeViewPx(220, 65);
-  }
-  function start() {
-    resize();
+  function initialize() {
+    if (window.viewEnv && viewEnv.resizeViewPx) {
+      viewEnv.resizeViewPx(136, 54);
+    }
     refresh();
     if (window.viewEnv && viewEnv.addDataChangedCallback) {
-      try { callbackId = viewEnv.addDataChangedCallback('model', 0, true); } catch (e) {}
+      try { callbackId = viewEnv.addDataChangedCallback('model', 0, true); }
+      catch (e) { console.warn('[INQ.x5] model observer unavailable', e); }
     }
     if (window.engine) {
       window.engine.on('viewEnv.onDataChanged', function (a, b, ids) {
@@ -24,30 +28,31 @@
         refresh();
       });
     }
-    if (window.model && typeof window.model.onReady === 'function') window.model.onReady();
+    call('onReady');
   }
   if (root) {
     root.addEventListener('mousedown', function (e) {
       if (e.button !== 0) return;
-      held = true;
-      lastX = e.screenX;
-      lastY = e.screenY;
+      dragging = true;
+      call('onDragStart', {x: e.screenX, y: e.screenY});
       e.preventDefault();
     });
     document.addEventListener('mousemove', function (e) {
-      if (!held) return;
-      var dx = Math.round(e.screenX - lastX), dy = Math.round(e.screenY - lastY);
-      if (!dx && !dy) return;
-      lastX = e.screenX;
-      lastY = e.screenY;
-      if (window.model && typeof window.model.onDrag === 'function') {
-        window.model.onDrag({dx: dx, dy: dy});
-      }
+      if (!dragging) return;
+      call('onDrag', {x: e.screenX, y: e.screenY, scale: window.devicePixelRatio || 1});
+      e.preventDefault();
     });
-    document.addEventListener('mouseup', function () { held = false; });
-    window.addEventListener('blur', function () { held = false; });
+    function finish() {
+      if (!dragging) return;
+      dragging = false;
+      call('onDragEnd');
+    }
+    document.addEventListener('mouseup', finish);
+    window.addEventListener('blur', finish);
   }
   if (window.engine && window.engine.whenReady) {
-    window.engine.whenReady.then(start);
-  } else { start(); }
+    window.engine.whenReady.then(initialize);
+  } else {
+    initialize();
+  }
 })();
