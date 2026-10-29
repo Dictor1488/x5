@@ -100,7 +100,8 @@ function installDrag() {
 function start() {
     ensureRoot();
     installDrag();
-    observer.subscribe(render);
+    observer.onUpdate(render);
+    observer.subscribe();
     render();
 }
 // The OpenWG engine supplies this promise for the injected module.
