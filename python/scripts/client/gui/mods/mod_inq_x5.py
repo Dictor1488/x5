@@ -2,10 +2,9 @@
 """INQ x5: single-module, WoT 2.4.x GameFace garage counter."""
 import logging
 import time
-from functools import wraps
 
-from frameworks.wulf import ViewModel, ViewSettings, ViewFlags, WindowImpl, WindowFlags, WindowLayer, WindowStatus
-from gui.impl.pub import ViewImpl
+from frameworks.wulf import ViewModel, ViewSettings, ViewFlags, WindowFlags, WindowLayer, WindowStatus
+from gui.impl.pub import ViewImpl, WindowImpl
 from gui.impl.gen import R
 from helpers import dependency
 from skeletons.gui.impl import IGuiLoader
