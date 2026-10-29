@@ -1,1 +1,4 @@
-body{margin:0;background:transparent;color:#fff;font-family:Arial,sans-serif}#x5-counter-widget{display:flex;gap:12px;align-items:center;padding:10px 16px;border-radius:6px;background:rgba(16,20,28,.8)}b{font-size:22px;color:#f6d075}#x5-value{font-size:20px}
+html,body{margin:0;padding:0;width:220px;height:65px;overflow:hidden;background:transparent;color:#fff;font-family:Arial,sans-serif}
+#x5-counter-widget{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:210px;height:54px;margin:5px;padding:0 14px;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:rgba(16,20,28,.90);cursor:move;user-select:none;-webkit-user-select:none}
+#x5-counter-widget b{font-size:21px;color:#f6d075;white-space:nowrap}
+#x5-value{font-size:20px;font-weight:bold}
