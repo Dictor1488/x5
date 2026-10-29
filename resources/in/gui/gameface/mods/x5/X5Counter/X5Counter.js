@@ -33,6 +33,8 @@ function render() {
     const root = ensureRoot();
     const vm = dataModel();
     if (!vm) return;
+    const visible = vm.visible && vm.visible.value !== undefined ? vm.visible.value : vm.visible;
+    root.style.display = visible === true ? 'flex' : 'none';
     const count = vm.count && vm.count.value !== undefined ? vm.count.value : vm.count;
     root.querySelector(".inq-x5-num").textContent = count === undefined ? "—" : String(count);
     if (root._dragging) return;
