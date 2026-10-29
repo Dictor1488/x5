@@ -100,6 +100,7 @@ class X5Model(ViewModel):
         try:
             _drag_start_position = tuple(_position)
             _drag_start_cursor = (float(payload['x']), float(payload['y']))
+            LOG.warning('Drag started: %s', _drag_start_cursor)
         except (KeyError, TypeError, ValueError):
             _drag_start_position = _drag_start_cursor = None
 
@@ -120,6 +121,7 @@ class X5Model(ViewModel):
     def _end_drag(self, *args):
         global _drag_start_position, _drag_start_cursor
         if _drag_start_cursor is not None:
+            LOG.warning('Drag ended: %s', _position)
             _save_position()
         _drag_start_position = _drag_start_cursor = None
 
