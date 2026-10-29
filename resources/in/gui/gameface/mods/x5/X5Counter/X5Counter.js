@@ -44,7 +44,7 @@
     document.addEventListener('mousemove', function (e) {
       if (!dragging) return;
       var point = cursor(e);
-      point.scale = window.devicePixelRatio || 1;
+      point.scale = (window.viewEnv && typeof viewEnv.getScale === 'function') ? viewEnv.getScale() : 1;
       call('onDrag', point);
       e.preventDefault();
     });
