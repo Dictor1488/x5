@@ -1,4 +1,4 @@
-name: Build and prerelease INQ x5
+name: Build and Release INQ x5
 on:
   push:
     tags:
@@ -35,17 +35,17 @@ jobs:
           python build.py --python27 "$env:PYTHON27" --version "$version"
       - uses: actions/upload-artifact@v4
         with:
-          name: me.inq.x5-experimental
+          name: me.inq.x5.wotmod
           path: build/me.inq.x5.wotmod
-      - name: Publish experimental prerelease
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0-alpha.1
-          name: INQ x5 0.1.0-alpha.1 experimental
-          prerelease: true
-          make_latest: false
+          tag_name: v0.1.0
+          name: INQ x5 v0.1.0
+          prerelease: false
+          make_latest: true
           body: |
-            Experimental only. GameFace ViewModel bridge is not implemented.
-            In-game counter is non-functional. Do not distribute as ready.
+            INQ x5 GameFace counter for World of Tanks.
+            First test build. In-game compatibility is not yet verified.
           files: build/me.inq.x5.wotmod
           fail_on_unmatched_files: true
