@@ -146,7 +146,7 @@ class X5View(ViewImpl):
 
 class X5Window(WindowImpl):
     def __init__(self, parent):
-        WindowImpl.__init__(self, WindowFlags.SERVICE_WINDOW,
+        WindowImpl.__init__(self, WindowFlags.WINDOW,
                             content=X5View(), layer=WindowLayer.VIEW,
                             name='INQx5', parent=parent)
 
