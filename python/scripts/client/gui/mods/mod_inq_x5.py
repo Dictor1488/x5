@@ -104,10 +104,10 @@ class X5Data(ViewModel):
 def _on_position(arg=None, *unused):
     try:
         data = arg or {}
-        x = int(data['x'])
-        y = int(data['y'])
-        w = int(data['w'])
-        h = int(data['h'])
+        x = int(data.get('x'))
+        y = int(data.get('y'))
+        w = int(data.get('w'))
+        h = int(data.get('h'))
         if w <= 0 or h <= 0:
             return
         # Keep the complete widget within the viewport and save viewport dimensions
