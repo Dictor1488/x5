@@ -1,4 +1,4 @@
-html,body{margin:0;padding:0;width:220px;height:65px;overflow:hidden;background:transparent;color:#fff;font-family:Arial,sans-serif}
-#x5-counter-widget{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:210px;height:54px;margin:5px;padding:0 14px;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:rgba(16,20,28,.90);cursor:move;user-select:none;-webkit-user-select:none}
-#x5-counter-widget b{font-size:21px;color:#f6d075;white-space:nowrap}
-#x5-value{font-size:20px;font-weight:bold}
+html,body{margin:0;padding:0;width:136px;height:54px;overflow:hidden;background:transparent;font-family:Arial,sans-serif}
+#x5-counter-widget{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:130px;height:48px;margin:3px;padding:3px 9px 3px 4px;border-radius:26px;background:rgba(15,20,29,.87);border:1px solid rgba(239,194,65,.3);cursor:move;user-select:none;-webkit-user-select:none}
+.x5-badge{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#f4c84b;color:#171b22;font-size:18px;font-weight:700;white-space:nowrap;pointer-events:none}
+#x5-value{color:#f4c84b;font-weight:700;font-size:25px;line-height:1;pointer-events:none}
