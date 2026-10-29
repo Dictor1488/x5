@@ -56,18 +56,16 @@ function fire(type, event) {
 Promise.resolve().then(() => {
   assert.equal(countLabel.textContent, '40');
   let claimed = false;
-  const mouseDown = store.get('mousedown');
-  assert.ok(mouseDown, 'Missing widget-local mousedown handler');
-  mouseDown({
-    target: root, clientX: 330, clientY: 210,
+  fire('mousedown', {
+    target: root, ctrlKey: true, clientX: 330, clientY: 210,
     preventDefault() { claimed = true; }, stopImmediatePropagation() {}
     // GameFace often supplies no standard MouseEvent.button field.
   });
-  assert.ok(claimed, 'root mousedown without button must start drag');
-  fire('mousemove', {clientX: 450, clientY: 260, preventDefault() {}});
+  assert.ok(claimed, 'document capture Ctrl+drag must start');
+  fire('mousemove', {clientX: 450, clientY: 260});
   assert.equal(root.style.left, '440px');
   assert.equal(root.style.top, '250px');
-  fire('mousemove', {clientX: 9999, clientY: 9999, preventDefault() {}});
+  fire('mousemove', {clientX: 9999, clientY: 9999});
   assert.equal(root.style.left, '685px');
   assert.equal(root.style.top, '552px');
   fire('mouseup', {});
@@ -76,5 +74,5 @@ Promise.resolve().then(() => {
   assert.equal(updates[0].y, 552);
   assert.equal(updates[0].w, 800);
   assert.equal(updates[0].h, 600);
-  console.log('PASS: x5 DOM drag without MouseEvent.button, viewport clamped, persisted on mouseup');
+  console.log('PASS: MoE-style Ctrl+drag, viewport clamp, persist on mouseup');
 }).catch(e => { console.error(e); process.exitCode = 1; });
