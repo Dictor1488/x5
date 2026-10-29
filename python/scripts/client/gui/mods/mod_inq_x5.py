@@ -27,7 +27,9 @@ def _count_tokens(tokens):
     for key, item in iterator:
         if not str(key).startswith('battle_bonus_x5'):
             continue
-        if isinstance(item, dict):
+        if isinstance(item, (tuple, list)) and len(item) >= 2:
+            expiry, count = item[0], item[1]
+        elif isinstance(item, dict):
             count = item.get('count', item.get('value', 0))
             expiry = item.get('expire', item.get('expires', None))
         else:
@@ -81,6 +83,10 @@ class X5Window(WindowImpl):
     def _onReady(self):
         self.show(focus=False)
         self.content.refresh()
+        try:
+            self.move(35, 170)
+        except Exception:
+            LOG.exception('Cannot position x5 window')
 
 def _manager():
     try:
@@ -154,11 +160,11 @@ def init():
     if _previous_populate is not None:
         return
     try:
-        from gui.Scaleform.daapi.view.lobby.hangar import Hangar
-        _previous_populate = Hangar._populate
-        _previous_dispose = Hangar._dispose
-        Hangar._populate = _populate
-        Hangar._dispose = _dispose
+        from gui.impl.lobby.hangar.random.random_hangar import RandomHangar
+        _previous_populate = RandomHangar._initialize
+        _previous_dispose = RandomHangar._finalize
+        RandomHangar._initialize = _populate
+        RandomHangar._finalize = _dispose
     except Exception:
         LOG.exception('Unable to install hangar hooks')
 
@@ -167,9 +173,9 @@ def fini():
     _hangar = None
     _close()
     if _previous_populate is not None:
-        from gui.Scaleform.daapi.view.lobby.hangar import Hangar
-        Hangar._populate = _previous_populate
-        Hangar._dispose = _previous_dispose
+        from gui.impl.lobby.hangar.random.random_hangar import RandomHangar
+        RandomHangar._initialize = _previous_populate
+        RandomHangar._finalize = _previous_dispose
         _previous_populate = None
         _previous_dispose = None
 
