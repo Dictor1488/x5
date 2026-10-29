@@ -3,6 +3,7 @@
 import logging
 import time
 import GUI
+import BigWorld
 import json
 import os
 
@@ -175,8 +176,15 @@ def _on_window_change(*args):
 
 def _show():
     global _window, _wait_manager
-    if _hangar is None or _window is not None:
+    if _hangar is None:
         return
+    try:
+        player = BigWorld.player()
+        if getattr(player, 'arena', None) is not None:
+            _close()
+            return
+    except Exception:
+        pass
     manager = _manager()
     if manager is None:
         return
@@ -190,9 +198,24 @@ def _show():
             except Exception:
                 LOG.exception('Cannot subscribe to window readiness')
         return
-    _unsubscribe()
+    if _wait_manager is not manager:
+        _unsubscribe()
+        try:
+            manager.onWindowStatusChanged += _on_window_change
+            _wait_manager = manager
+        except Exception:
+            LOG.exception('Cannot watch lobby window changes')
+    if _window is not None:
+        if getattr(_window, '_x5_parent', None) is parent:
+            return
+        try:
+            _window.destroy()
+        except Exception:
+            pass
+        _window = None
     try:
         _window = X5Window(parent)
+        _window._x5_parent = parent
         _window.load()
     except Exception:
         LOG.exception('Cannot create x5 GameFace window')
