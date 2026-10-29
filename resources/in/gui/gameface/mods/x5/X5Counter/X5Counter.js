@@ -3,6 +3,10 @@
   var root = document.getElementById('x5-counter-widget');
   var label = document.getElementById('x5-value');
   var callbackId = null, dragging = false;
+  function cursor(e) {
+    return {x: Number.isFinite(e.screenX) ? e.screenX : e.clientX,
+            y: Number.isFinite(e.screenY) ? e.screenY : e.clientY};
+  }
   function call(name, data) {
     if (!window.model || typeof window.model[name] !== 'function') return;
     if (data === undefined) window.model[name]();
@@ -34,12 +38,14 @@
     root.addEventListener('mousedown', function (e) {
       if (e.button !== 0) return;
       dragging = true;
-      call('onDragStart', {x: e.screenX, y: e.screenY});
+      call('onDragStart', cursor(e));
       e.preventDefault();
     });
     document.addEventListener('mousemove', function (e) {
       if (!dragging) return;
-      call('onDrag', {x: e.screenX, y: e.screenY, scale: window.devicePixelRatio || 1});
+      var point = cursor(e);
+      point.scale = window.devicePixelRatio || 1;
+      call('onDrag', point);
       e.preventDefault();
     });
     function finish() {
