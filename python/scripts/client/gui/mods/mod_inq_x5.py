@@ -18,6 +18,7 @@ _active = None
 _selected_host = None
 _patched = []
 _subscribed = False
+_lobby_machine = None
 _revision = 0
 _position = {'x': 0, 'y': 0, 'w': 0, 'h': 0}
 _candidates = (
@@ -76,7 +77,7 @@ def _count():
 
 class X5Data(ViewModel):
     def __init__(self):
-        super(X5Data, self).__init__(properties=6, commands=1)
+        super(X5Data, self).__init__(properties=7, commands=1)
 
     def _initialize(self):
         super(X5Data, self)._initialize()
@@ -86,16 +87,18 @@ class X5Data(ViewModel):
         self._addNumberProperty('posW', 0)
         self._addNumberProperty('posH', 0)
         self._addNumberProperty('rev', 0)
+        self._addBoolProperty('visible', False)
         self.setPosition = self._addCommand('setPosition')
         self.setPosition += _on_position
 
-    def setData(self, count, pos, rev):
+    def setData(self, count, pos, rev, visible):
         self._setString(0, str(count))
         self._setNumber(1, pos['x'])
         self._setNumber(2, pos['y'])
         self._setNumber(3, pos['w'])
         self._setNumber(4, pos['h'])
         self._setNumber(5, rev)
+        self._setBool(6, bool(visible))
 
 
 def _on_position(arg=None, *unused):
@@ -117,19 +120,27 @@ def _on_position(arg=None, *unused):
         LOG.exception('Invalid x5 position command')
 
 
+def _in_garage():
+    try:
+        from gui.Scaleform.lobby_entry import getLobbyStateMachine
+        machine = getLobbyStateMachine()
+        state = machine.visibleState if machine is not None else None
+        return state is not None and (state.getStateID() or '').endswith('hangar/{root}')
+    except Exception:
+        return False
+
+
 def _refresh(*args, **kwargs):
     global _revision
     if _active is None:
         return
     try:
-        from gui.Scaleform.lobby_entry import getLobbyStateMachine
-        if getLobbyStateMachine() is None:
-            return
-        data = _count()
+        visible = _in_garage()
+        data = _count() if visible else 0
         model = _active[1]
         _revision = (_revision + 1) % 2147483647
         with model.transaction() as tx:
-            tx.setData(data, _position, _revision)
+            tx.setData(data, _position, _revision, visible)
     except Exception:
         LOG.exception('Unable to refresh x5 tokens')
 
@@ -139,13 +150,18 @@ def _on_sync(*args, **kwargs):
 
 
 def _subscribe():
-    global _subscribed
+    global _subscribed, _lobby_machine
     if _subscribed:
         return
     try:
         cache = dependency.instance(IItemsCache)
         cache.onSyncCompleted += _on_sync
         _subscribed = True
+        from gui.Scaleform.lobby_entry import getLobbyStateMachine
+        machine = getLobbyStateMachine()
+        if machine is not None and machine is not _lobby_machine:
+            machine.onVisibleRouteChanged += _refresh
+            _lobby_machine = machine
     except Exception:
         LOG.exception('Unable to subscribe to item cache')
 
@@ -214,7 +230,7 @@ def init():
 
 
 def fini():
-    global _active, _subscribed, _selected_host
+    global _active, _subscribed, _selected_host, _lobby_machine
     for presenter, original in _patched:
         presenter._onLoading = original
         presenter._inq_x5_hooked = False
@@ -225,5 +241,11 @@ def fini():
         except Exception:
             pass
         _subscribed = False
+    if _lobby_machine is not None:
+        try:
+            _lobby_machine.onVisibleRouteChanged -= _refresh
+        except Exception:
+            pass
+        _lobby_machine = None
     _active = None
     _selected_host = None
