@@ -162,9 +162,10 @@ def init():
     try:
         from gui.impl.lobby.hangar.random.random_hangar import RandomHangar
         _previous_populate = RandomHangar._initialize
-        _previous_dispose = RandomHangar._finalize
+        _previous_dispose = getattr(RandomHangar, '_finalize', None)
         RandomHangar._initialize = _populate
-        RandomHangar._finalize = _dispose
+        if _previous_dispose is not None:
+            RandomHangar._finalize = _dispose
     except Exception:
         LOG.exception('Unable to install hangar hooks')
 
@@ -175,7 +176,8 @@ def fini():
     if _previous_populate is not None:
         from gui.impl.lobby.hangar.random.random_hangar import RandomHangar
         RandomHangar._initialize = _previous_populate
-        RandomHangar._finalize = _previous_dispose
+        if _previous_dispose is not None:
+            RandomHangar._finalize = _previous_dispose
         _previous_populate = None
         _previous_dispose = None
 
