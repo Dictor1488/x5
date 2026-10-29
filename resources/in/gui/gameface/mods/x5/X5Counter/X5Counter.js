@@ -62,19 +62,19 @@ function installDrag() {
     initialized = true;
     document.addEventListener("mousedown", function (event) {
         const root = document.getElementById(ID);
-        if (!root || !event.ctrlKey || event.button !== 0 || !root.contains(event.target)) return;
+        if (!root || root.style.display === 'none' || event.button !== 0 || !root.contains(event.target)) return;
         // Only claim the x5 widget; don't take inputs from other injected mods.
         event.preventDefault();
         event.stopImmediatePropagation();
         const r = root.getBoundingClientRect();
         const offsetX = event.clientX - r.left;
         const offsetY = event.clientY - r.top;
-        const vp = viewport();
         root.style.right = "auto";
         root.style.left = Math.round(r.left) + "px";
         root.style.top = Math.round(r.top) + "px";
         root._dragging = true;
         function move(e) {
+            const vp = viewport();
             const left = clamp(e.clientX - offsetX, 0, Math.max(0, vp.w - r.width));
             const top = clamp(e.clientY - offsetY, 0, Math.max(0, vp.h - r.height));
             root.style.left = Math.round(left) + "px";
