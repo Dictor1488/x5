@@ -56,13 +56,25 @@ _drag_start_position = None
 _drag_start_cursor = None
 _CONFIG_PATH = os.path.join('mods', 'configs', 'inq', 'x5.json')
 
+def _safe_position(x, y, scale=1.0):
+    """Constrain positions to the visible game viewport, matching calculator math."""
+    try:
+        sw, sh = GUI.screenResolution()
+        scale = max(0.25, min(3.0, float(scale)))
+        logical_width = max(1, int(sw / scale))
+        logical_height = max(1, int(sh / scale))
+        return [max(0, min(int(x), logical_width - 136)),
+                max(0, min(int(y), logical_height - 54))]
+    except Exception:
+        return [max(0, min(int(x), 1750)), max(0, min(int(y), 950))]
+
 def _load_position():
     try:
         with open(_CONFIG_PATH, 'r') as file_handle:
             data = json.load(file_handle)
-        _position[:] = [max(0, int(data['x'])), max(0, int(data['y']))]
+        _position[:] = _safe_position(data['x'], data['y'], data.get('scale', 1.0))
     except (IOError, KeyError, TypeError, ValueError):
-        pass
+        _position[:] = _safe_position(425, 165)
 
 def _save_position():
     try:
@@ -73,6 +85,7 @@ def _save_position():
             json.dump({'x': _position[0], 'y': _position[1]}, file_handle)
     except Exception:
         LOG.exception('Unable to save x5 position')
+
 
 
 class X5Model(ViewModel):
@@ -93,6 +106,7 @@ class X5Model(ViewModel):
 
     def _ready(self, *args):
         if _window is not None:
+            _position[:] = _safe_position(_position[0], _position[1])
             _window.move(_position[0], _position[1])
 
     def _start_drag(self, payload=None, *args):
@@ -111,9 +125,9 @@ class X5Model(ViewModel):
             dx = float(payload['x']) - _drag_start_cursor[0]
             dy = float(payload['y']) - _drag_start_cursor[1]
             scale = max(0.25, min(3.0, float(payload.get('scale', 1.0))))
-            sw, sh = GUI.screenResolution()
-            _position[0] = max(0, min(int(sw / scale) - 136, int(round(_drag_start_position[0] + dx / scale))))
-            _position[1] = max(0, min(int(sh / scale) - 54, int(round(_drag_start_position[1] + dy / scale))))
+            _position[:] = _safe_position(
+                round(_drag_start_position[0] + dx / scale),
+                round(_drag_start_position[1] + dy / scale), scale)
             _window.move(*_position)
         except Exception:
             LOG.exception('Unable to drag x5')
@@ -154,6 +168,7 @@ class X5Window(WindowImpl):
         self.show(focus=False)
         self.content.refresh()
         try:
+            _position[:] = _safe_position(_position[0], _position[1])
             self.move(*_position)
         except Exception:
             LOG.exception('Cannot position x5 window')
