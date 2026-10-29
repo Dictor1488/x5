@@ -1,1 +1,12 @@
-{"info":{"id":"me.inq.x5","version":"0.1.0-alpha.1","name":"INQ x5 Counter","description":"Experimental GameFace garage x5 XP counter"},"package":{"compression":"stored","compilePython":true}}
+{
+  "info": {
+    "id": "me.inq.x5",
+    "version": "0.1.0",
+    "name": "INQ x5 Counter",
+    "description": "World of Tanks GameFace garage x5 XP counter"
+  },
+  "package": {
+    "compression": "stored",
+    "compilePython": true
+  }
+}
