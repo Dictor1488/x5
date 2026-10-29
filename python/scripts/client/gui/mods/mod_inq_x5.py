@@ -2,6 +2,7 @@
 """INQ x5: single-module, WoT 2.4.x GameFace garage counter."""
 import logging
 import time
+import GUI
 
 from frameworks.wulf import ViewModel, ViewSettings, ViewFlags, WindowFlags, WindowLayer, WindowStatus
 from gui.impl.pub import ViewImpl, WindowImpl
@@ -47,13 +48,36 @@ def _count():
     cache = dependency.instance(IItemsCache)
     return _count_tokens(cache.items.tokens.getTokens())
 
+_position = [425, 165]
+
 class X5Model(ViewModel):
-    def __init__(self, properties=1, commands=0):
+    def __init__(self, properties=1, commands=2):
         super(X5Model, self).__init__(properties=properties, commands=commands)
 
     def _initialize(self):
         super(X5Model, self)._initialize()
         self._addStringProperty('count', '-')
+        self.onReady = self._addCommand('onReady')
+        self.onReady += self._ready
+        self.onDrag = self._addCommand('onDrag')
+        self.onDrag += self._drag
+
+    def _ready(self, *args):
+        if _window is not None:
+            _window.move(_position[0], _position[1])
+
+    def _drag(self, payload=None, *args):
+        if _window is None or not isinstance(payload, dict):
+            return
+        try:
+            dx = max(-300, min(300, int(payload.get('dx', 0))))
+            dy = max(-300, min(300, int(payload.get('dy', 0))))
+            sw, sh = GUI.screenResolution()
+            _position[0] = max(0, min(int(sw) - 220, _position[0] + dx))
+            _position[1] = max(0, min(int(sh) - 65, _position[1] + dy))
+            _window.move(*_position)
+        except Exception:
+            LOG.exception('Cannot move x5 window')
 
     def setCount(self, value):
         self._setString(0, str(value))
@@ -84,7 +108,7 @@ class X5Window(WindowImpl):
         self.show(focus=False)
         self.content.refresh()
         try:
-            self.move(35, 170)
+            self.move(*_position)
         except Exception:
             LOG.exception('Cannot position x5 window')
 
