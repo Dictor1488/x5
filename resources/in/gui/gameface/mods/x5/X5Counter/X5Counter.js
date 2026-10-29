@@ -62,7 +62,7 @@ function installDrag() {
     initialized = true;
     document.addEventListener("mousedown", function (event) {
         const root = document.getElementById(ID);
-        if (!root || root.style.display === 'none' || event.button !== 0 || !root.contains(event.target)) return;
+        if (!root || root.style.display === 'none' || !root.contains(event.target)) return;
         // Only claim the x5 widget; don't take inputs from other injected mods.
         event.preventDefault();
         event.stopImmediatePropagation();
