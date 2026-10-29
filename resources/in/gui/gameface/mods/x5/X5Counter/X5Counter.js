@@ -60,42 +60,63 @@ function render() {
 function installDrag() {
     if (initialized) return;
     initialized = true;
-    document.addEventListener("mousedown", function (event) {
+    let active = null;
+    const point = e => ({
+        x: Number.isFinite(e.clientX) ? e.clientX : (Number.isFinite(e.pageX) ? e.pageX : e.screenX),
+        y: Number.isFinite(e.clientY) ? e.clientY : (Number.isFinite(e.pageY) ? e.pageY : e.screenY)
+    });
+    const stop = e => {
+        if (e && typeof e.preventDefault === "function") e.preventDefault();
+        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+    };
+    function begin(event, fromRoot) {
         const root = document.getElementById(ID);
-        if (!root || root.style.display === 'none' || !root.contains(event.target)) return;
-        // Only claim the x5 widget; don't take inputs from other injected mods.
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        const r = root.getBoundingClientRect();
-        const offsetX = event.clientX - r.left;
-        const offsetY = event.clientY - r.top;
-        root.style.right = "auto";
-        root.style.left = Math.round(r.left) + "px";
-        root.style.top = Math.round(r.top) + "px";
+        if (!root || root.style.display === "none" || active) return;
+        // Coherent events do not necessarily expose button/target consistently.
+        if (!fromRoot && (!event.target || !root.contains(event.target))) return;
+        if (event.button !== undefined && event.button !== 0) return;
+        const cursor = point(event);
+        if (!Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return;
+        const rect = root.getBoundingClientRect();
+        active = {root, offsetX: cursor.x - rect.left, offsetY: cursor.y - rect.top};
         root._dragging = true;
-        function move(e) {
-            const vp = viewport();
-            const left = clamp(e.clientX - offsetX, 0, Math.max(0, vp.w - r.width));
-            const top = clamp(e.clientY - offsetY, 0, Math.max(0, vp.h - r.height));
-            root.style.left = Math.round(left) + "px";
-            root.style.top = Math.round(top) + "px";
-            e.preventDefault();
-        }
-        function up() {
-            document.removeEventListener("mousemove", move, true);
-            document.removeEventListener("mouseup", up, true);
-            root._dragging = false;
-            const rect = root.getBoundingClientRect();
-            const now = viewport();
-            invoke("setPosition", {
-                x: Math.max(1, Math.round(rect.left)),
-                y: Math.max(1, Math.round(rect.top)),
-                w: now.w, h: now.h
-            });
-        }
-        document.addEventListener("mousemove", move, true);
-        document.addEventListener("mouseup", up, true);
-    }, true);
+        root.style.right = "auto";
+        root.style.left = Math.round(rect.left) + "px";
+        root.style.top = Math.round(rect.top) + "px";
+        stop(event);
+    }
+    function move(event) {
+        if (!active) return;
+        const cursor = point(event);
+        if (!Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return;
+        const rect = active.root.getBoundingClientRect();
+        const vp = viewport();
+        active.root.style.left = Math.round(clamp(cursor.x - active.offsetX, 0, Math.max(0, vp.w - rect.width))) + "px";
+        active.root.style.top = Math.round(clamp(cursor.y - active.offsetY, 0, Math.max(0, vp.h - rect.height))) + "px";
+        stop(event);
+    }
+    function end(event) {
+        if (!active) return;
+        const root = active.root;
+        active = null;
+        root._dragging = false;
+        const rect = root.getBoundingClientRect();
+        const vp = viewport();
+        invoke("setPosition", {
+            x: Math.max(1, Math.round(rect.left)),
+            y: Math.max(1, Math.round(rect.top)),
+            w: vp.w, h: vp.h
+        });
+        stop(event);
+    }
+    const root = ensureRoot();
+    // Register both root-local and document-capture listeners: whichever the
+    // embedded Coherent version dispatches is sufficient; active prevents duplicates.
+    root.addEventListener("mousedown", e => begin(e, true), false);
+    document.addEventListener("mousedown", e => begin(e, false), true);
+    document.addEventListener("mousemove", move, true);
+    document.addEventListener("mouseup", end, true);
+    window.addEventListener("blur", end);
     window.addEventListener("resize", render);
 }
 
