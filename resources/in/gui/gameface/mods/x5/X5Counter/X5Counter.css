@@ -1,4 +1,4 @@
 html,body{margin:0;padding:0;width:136px;height:54px;overflow:hidden;background:transparent;font-family:Arial,sans-serif}
-#x5-counter-widget{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:130px;height:48px;margin:3px;padding:3px 9px 3px 4px;border-radius:26px;background:rgba(15,20,29,.87);border:1px solid rgba(239,194,65,.3);cursor:move;user-select:none;-webkit-user-select:none}
-.x5-badge{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#f4c84b;color:#171b22;font-size:18px;font-weight:700;white-space:nowrap;pointer-events:none}
-#x5-value{color:#f4c84b;font-weight:700;font-size:25px;line-height:1;pointer-events:none}
+#x5-counter-widget{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:130px;height:48px;margin:3px;padding:3px 5px;background:transparent;cursor:move;user-select:none;-webkit-user-select:none}
+.x5-badge{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:rgba(16,19,25,.72);border:2px solid #eac35a;color:#f6d579;font-size:19px;font-weight:700;white-space:nowrap;pointer-events:none}
+#x5-value{color:#f6d579;text-shadow:0 1px 4px rgba(0,0,0,.7);font-size:27px;font-weight:700;line-height:1;pointer-events:none}
