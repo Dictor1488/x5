@@ -1,4 +1,0 @@
-#x5-counter-widget{position:fixed;right:26px;top:155px;z-index:2500;display:flex;align-items:center;gap:8px;padding:8px 13px;border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#f5f2e8;background:rgba(20,24,32,.82);box-shadow:0 2px 12px rgba(0,0,0,.24);font-family:Arial,sans-serif;font-size:16px;pointer-events:none}
-#x5-counter-widget .x5-multiplier{font-size:22px;font-weight:700;color:#f5ce63}
-#x5-counter-widget .x5-label{font-size:11px;letter-spacing:.08em;opacity:.7}
-#x5-counter-widget .x5-count{min-width:24px;text-align:right;font-weight:700}
