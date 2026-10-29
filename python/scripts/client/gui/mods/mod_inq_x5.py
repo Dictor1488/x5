@@ -176,15 +176,8 @@ def _on_window_change(*args):
 
 def _show():
     global _window, _wait_manager
-    if _hangar is None:
+    if _hangar is None or _window is not None:
         return
-    try:
-        player = BigWorld.player()
-        if getattr(player, 'arena', None) is not None:
-            _close()
-            return
-    except Exception:
-        pass
     manager = _manager()
     if manager is None:
         return
@@ -192,31 +185,16 @@ def _show():
     if parent is None or getattr(parent, 'proxy', None) is None or getattr(parent, 'windowStatus', None) != WindowStatus.LOADED:
         if _wait_manager is not manager:
             _unsubscribe()
-            try:
-                manager.onWindowStatusChanged += _on_window_change
-                _wait_manager = manager
-            except Exception:
-                LOG.exception('Cannot subscribe to window readiness')
-        return
-    if _wait_manager is not manager:
-        _unsubscribe()
-        try:
             manager.onWindowStatusChanged += _on_window_change
             _wait_manager = manager
-        except Exception:
-            LOG.exception('Cannot watch lobby window changes')
-    if _window is not None:
-        if getattr(_window, '_x5_parent', None) is parent:
-            return
-        try:
-            _window.destroy()
-        except Exception:
-            pass
-        _window = None
+        return
+    # A window-status callback can be fired recursively by load(); never
+    # observe it while creating the x5 view.
+    _unsubscribe()
     try:
-        _window = X5Window(parent)
-        _window._x5_parent = parent
-        _window.load()
+        candidate = X5Window(parent)
+        _window = candidate
+        candidate.load()
     except Exception:
         LOG.exception('Cannot create x5 GameFace window')
         _window = None
