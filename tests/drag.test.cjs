@@ -12,6 +12,7 @@ const root = {
   _dragging: false,
   innerHTML: '',
   contains(target) { return target === this; },
+  addEventListener(type, fn) { store.set(type, fn); },
   querySelector() { return countLabel; },
   getBoundingClientRect() {
     return {
@@ -55,12 +56,14 @@ function fire(type, event) {
 Promise.resolve().then(() => {
   assert.equal(countLabel.textContent, '40');
   let claimed = false;
-  fire('mousedown', {
+  const mouseDown = store.get('mousedown');
+  assert.ok(mouseDown, 'Missing widget-local mousedown handler');
+  mouseDown({
     target: root, clientX: 330, clientY: 210,
     preventDefault() { claimed = true; }, stopImmediatePropagation() {}
     // GameFace often supplies no standard MouseEvent.button field.
   });
-  assert.ok(claimed, 'mousedown without button must start drag');
+  assert.ok(claimed, 'root mousedown without button must start drag');
   fire('mousemove', {clientX: 450, clientY: 260, preventDefault() {}});
   assert.equal(root.style.left, '440px');
   assert.equal(root.style.top, '250px');
