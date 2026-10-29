@@ -4,7 +4,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parent
 BASE=ROOT/"python/scripts/client"
-SRC=[BASE/"gui/mods/mod_inq_x5.py",BASE/"gui/mods/x5_counter.py"]
+SRC=[BASE/"gui/mods/mod_inq_x5.py"]
 RES=ROOT/"resources/in"
 def add(z,name,data):
     info=zipfile.ZipInfo(name,(1980,1,1,0,0,0))
