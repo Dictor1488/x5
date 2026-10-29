@@ -178,7 +178,7 @@ def _on_window_change(*args):
 
 def _show():
     global _window, _wait_manager
-    if _hangar is None or _window is not None:
+    if _hangar is None:
         return
     manager = _manager()
     if manager is None:
@@ -190,11 +190,19 @@ def _show():
             manager.onWindowStatusChanged += _on_window_change
             _wait_manager = manager
         return
-    # A window-status callback can be fired recursively by load(); never
-    # observe it while creating the x5 view.
+    # Keep one window per live main lobby root, never recursively create it.
+    if _window is not None:
+        if getattr(_window, '_x5_parent', None) is parent:
+            return
+        try:
+            _window.destroy()
+        except Exception:
+            pass
+        _window = None
     _unsubscribe()
     try:
         candidate = X5Window(parent)
+        candidate._x5_parent = parent
         _window = candidate
         candidate.load()
     except Exception:
