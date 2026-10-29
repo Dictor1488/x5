@@ -19,9 +19,9 @@ class InjectionContract(unittest.TestCase):
     def test_dom_drag_is_viewport_bound_and_owned(self):
         code = JS.read_text(encoding='utf-8')
         for needle in ('ModelObserver(', 'observer.onUpdate(render)',
-                       'root.contains(event.target)', 'event.clientX',
-                       'event.clientX', 'getBoundingClientRect()',
-                       'setPosition', 'vp.w - r.width', 'vp.h - r.height'):
+                       'root.contains(e.target)', 'e.clientX',
+                       'ev.clientX', 'getBoundingClientRect()',
+                       'setPosition', 'w - boxW', 'h - boxH'):
             self.assertIn(needle, code)
         self.assertNotIn('screenX', code)
         self.assertNotIn('event.button', code)
