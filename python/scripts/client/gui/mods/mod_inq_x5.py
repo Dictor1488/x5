@@ -3,6 +3,8 @@
 import logging
 import time
 import GUI
+import json
+import os
 
 from frameworks.wulf import ViewModel, ViewSettings, ViewFlags, WindowFlags, WindowLayer, WindowStatus
 from gui.impl.pub import ViewImpl, WindowImpl
@@ -49,9 +51,31 @@ def _count():
     return _count_tokens(cache.items.tokens.getTokens())
 
 _position = [425, 165]
+_drag_start_position = None
+_drag_start_cursor = None
+_CONFIG_PATH = os.path.join('mods', 'configs', 'inq', 'x5.json')
+
+def _load_position():
+    try:
+        with open(_CONFIG_PATH, 'r') as file_handle:
+            data = json.load(file_handle)
+        _position[:] = [max(0, int(data['x'])), max(0, int(data['y']))]
+    except (IOError, KeyError, TypeError, ValueError):
+        pass
+
+def _save_position():
+    try:
+        directory = os.path.dirname(_CONFIG_PATH)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        with open(_CONFIG_PATH, 'w') as file_handle:
+            json.dump({'x': _position[0], 'y': _position[1]}, file_handle)
+    except Exception:
+        LOG.exception('Unable to save x5 position')
+
 
 class X5Model(ViewModel):
-    def __init__(self, properties=1, commands=2):
+    def __init__(self, properties=1, commands=4):
         super(X5Model, self).__init__(properties=properties, commands=commands)
 
     def _initialize(self):
@@ -61,23 +85,42 @@ class X5Model(ViewModel):
         self.onReady += self._ready
         self.onDrag = self._addCommand('onDrag')
         self.onDrag += self._drag
+        self.onDragStart = self._addCommand('onDragStart')
+        self.onDragStart += self._start_drag
+        self.onDragEnd = self._addCommand('onDragEnd')
+        self.onDragEnd += self._end_drag
 
     def _ready(self, *args):
         if _window is not None:
             _window.move(_position[0], _position[1])
 
+    def _start_drag(self, payload=None, *args):
+        global _drag_start_position, _drag_start_cursor
+        try:
+            _drag_start_position = tuple(_position)
+            _drag_start_cursor = (float(payload['x']), float(payload['y']))
+        except (KeyError, TypeError, ValueError):
+            _drag_start_position = _drag_start_cursor = None
+
     def _drag(self, payload=None, *args):
-        if _window is None or not isinstance(payload, dict):
+        if _window is None or _drag_start_cursor is None:
             return
         try:
-            dx = max(-300, min(300, int(payload.get('dx', 0))))
-            dy = max(-300, min(300, int(payload.get('dy', 0))))
+            dx = float(payload['x']) - _drag_start_cursor[0]
+            dy = float(payload['y']) - _drag_start_cursor[1]
+            scale = max(0.25, min(3.0, float(payload.get('scale', 1.0))))
             sw, sh = GUI.screenResolution()
-            _position[0] = max(0, min(int(sw) - 220, _position[0] + dx))
-            _position[1] = max(0, min(int(sh) - 65, _position[1] + dy))
+            _position[0] = max(0, min(int(sw / scale) - 136, int(round(_drag_start_position[0] + dx / scale))))
+            _position[1] = max(0, min(int(sh / scale) - 54, int(round(_drag_start_position[1] + dy / scale))))
             _window.move(*_position)
         except Exception:
-            LOG.exception('Cannot move x5 window')
+            LOG.exception('Unable to drag x5')
+
+    def _end_drag(self, *args):
+        global _drag_start_position, _drag_start_cursor
+        if _drag_start_cursor is not None:
+            _save_position()
+        _drag_start_position = _drag_start_cursor = None
 
     def setCount(self, value):
         self._setString(0, str(value))
@@ -174,13 +217,13 @@ def _populate(self, *args, **kwargs):
 
 def _dispose(self, *args, **kwargs):
     global _hangar
-    if _hangar is self:
-        _hangar = None
-        _close()
+    # Page navigation is not logout: do not destroy the lobby window here.
+    # It survives RandomHangar disposal and is cleaned on disconnect/battle.
     return _previous_dispose(self, *args, **kwargs)
 
 def init():
     global _previous_populate, _previous_dispose
+    _load_position()
     if _previous_populate is not None:
         return
     try:
@@ -206,7 +249,11 @@ def fini():
         _previous_dispose = None
 
 def onDisconnected():
+    global _hangar
+    _hangar = None
     _close()
 
 def onAccountBecomeNonPlayer():
+    global _hangar
+    _hangar = None
     _close()
