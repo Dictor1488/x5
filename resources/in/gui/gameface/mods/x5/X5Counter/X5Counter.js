@@ -57,66 +57,61 @@ function render() {
     }
 }
 
+// Port of the MoE Calculator garage widget's Ctrl+drag implementation.
+// Document CAPTURE, target ownership, local DOM motion and one final Wulf command.
 function installDrag() {
     if (initialized) return;
     initialized = true;
-    let active = null;
-    const point = e => ({
-        x: Number.isFinite(e.clientX) ? e.clientX : (Number.isFinite(e.pageX) ? e.pageX : e.screenX),
-        y: Number.isFinite(e.clientY) ? e.clientY : (Number.isFinite(e.pageY) ? e.pageY : e.screenY)
-    });
-    const stop = e => {
-        if (e && typeof e.preventDefault === "function") e.preventDefault();
-        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    };
-    function begin(event, fromRoot) {
+    document.addEventListener("mousedown", function (e) {
         const root = document.getElementById(ID);
-        if (!root || root.style.display === "none" || active) return;
-        // Coherent events do not necessarily expose button/target consistently.
-        if (!fromRoot && (!event.target || !root.contains(event.target))) return;
-        if (event.button !== undefined && event.button !== 0) return;
-        const cursor = point(event);
-        if (!Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return;
-        const rect = root.getBoundingClientRect();
-        active = {root, offsetX: cursor.x - rect.left, offsetY: cursor.y - rect.top};
-        root._dragging = true;
+        if (!root || root.style.display === "none") return;
+        if (!e.ctrlKey) return;
+        if (!root.contains(e.target)) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        const r0 = root.getBoundingClientRect();
+        const boxW = r0.width, boxH = r0.height;
+        const offX = e.clientX - r0.left;
+        const offY = e.clientY - r0.top;
+        const startLeft = Math.round(r0.left);
+        const startTop = Math.round(r0.top);
         root.style.right = "auto";
-        root.style.left = Math.round(rect.left) + "px";
-        root.style.top = Math.round(rect.top) + "px";
-        stop(event);
-    }
-    function move(event) {
-        if (!active) return;
-        const cursor = point(event);
-        if (!Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return;
-        const rect = active.root.getBoundingClientRect();
-        const vp = viewport();
-        active.root.style.left = Math.round(clamp(cursor.x - active.offsetX, 0, Math.max(0, vp.w - rect.width))) + "px";
-        active.root.style.top = Math.round(clamp(cursor.y - active.offsetY, 0, Math.max(0, vp.h - rect.height))) + "px";
-        stop(event);
-    }
-    function end(event) {
-        if (!active) return;
-        const root = active.root;
-        active = null;
-        root._dragging = false;
-        const rect = root.getBoundingClientRect();
-        const vp = viewport();
-        invoke("setPosition", {
-            x: Math.max(1, Math.round(rect.left)),
-            y: Math.max(1, Math.round(rect.top)),
-            w: vp.w, h: vp.h
-        });
-        stop(event);
-    }
-    const root = ensureRoot();
-    // Register both root-local and document-capture listeners: whichever the
-    // embedded Coherent version dispatches is sufficient; active prevents duplicates.
-    root.addEventListener("mousedown", e => begin(e, true), false);
-    document.addEventListener("mousedown", e => begin(e, false), true);
-    document.addEventListener("mousemove", move, true);
-    document.addEventListener("mouseup", end, true);
-    window.addEventListener("blur", end);
+        root.style.bottom = "auto";
+        root.style.left = startLeft + "px";
+        root.style.top = startTop + "px";
+        root._dragging = true;
+        root.style.cursor = "move";
+        const onMove = function (ev) {
+            const w = window.innerWidth || 0;
+            const h = window.innerHeight || 0;
+            let cx = ev.clientX - offX;
+            let cy = ev.clientY - offY;
+            if (w) cx = Math.max(0, Math.min(w - boxW, cx));
+            if (h) cy = Math.max(1, Math.min(h - boxH, cy));
+            if (ev.shiftKey) {
+                const dx = cx - startLeft, dy = cy - startTop;
+                if (Math.abs(dx) >= Math.abs(dy)) cy = startTop;
+                else cx = startLeft;
+            }
+            root.style.left = Math.round(cx) + "px";
+            root.style.top = Math.round(cy) + "px";
+        };
+        const onUp = function () {
+            document.removeEventListener("mousemove", onMove, true);
+            document.removeEventListener("mouseup", onUp, true);
+            root._dragging = false;
+            root.style.cursor = "";
+            const r = root.getBoundingClientRect();
+            const vp = viewport();
+            invoke("setPosition", {
+                x: Math.max(1, Math.round(r.left)),
+                y: Math.max(1, Math.round(r.top)),
+                w: vp.w, h: vp.h
+            });
+        };
+        document.addEventListener("mousemove", onMove, true);
+        document.addEventListener("mouseup", onUp, true);
+    }, true);
     window.addEventListener("resize", render);
 }
 
