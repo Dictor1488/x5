@@ -33,6 +33,7 @@ jobs:
         run: |
           $version = (Get-Content build.json -Raw | ConvertFrom-Json).info.version
           python build.py --python27 "$env:PYTHON27" --version "$version"
+          "MOD_VERSION=$version" >> $env:GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
           name: me.inq.x5.wotmod
@@ -40,8 +41,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0
-          name: INQ x5 v0.1.0
+          tag_name: v${{ env.MOD_VERSION }}
+          name: INQ x5 v${{ env.MOD_VERSION }}
           prerelease: false
           make_latest: true
           body: |
