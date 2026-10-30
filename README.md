@@ -10,7 +10,7 @@ The old floating Wulf WINDOW implementation was removed. The current implementat
 2. Attach `openwg_gameface.gf_mod_inject` to the sub-view ViewModel; never overwrite another mod's `ModInjectModel`.
 3. Add nested `x5Data` Wulf ViewModel with the token count and placement.
 4. Render the widget inside the **existing garage GameFace document**, so it has no independent Wulf focus/stacking/window-position semantics.
-5. Hold **Ctrl + left mouse button** over the widget to move it. Mouse handling uses document capture, client viewport coordinates and root-owned hit testing. The DOM moves during the gesture; only the final x/y + viewport dimensions are sent to Python.
+5. Drag the widget with the **left mouse button**. Mouse handling uses document capture, client viewport coordinates and root-owned hit testing. The DOM moves during the gesture; only the final x/y + viewport dimensions are sent to Python.
 6. The widget is hidden on routes other than the plain garage, using the client's lobby state machine.
 7. Store the viewport-relative pinned coordinates in `mods/configs/inq/x5.json`. On resolution changes the JS rescales and clamps them.
 
@@ -22,7 +22,6 @@ The original standalone HTML and `gen_resources` JSON registration were delibera
 - `resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.js` — OpenWG ModelObserver, DOM widget, Ctrl+drag
 - `resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.css` — scoped widget styling only
 - `build.json`, `build.py` — package metadata and Python 2.7 .wotmod builder
-- `.github/workflows/release.yml` — normal GitHub Release workflow
 
 ## Sources inspected
 
@@ -34,10 +33,10 @@ The original standalone HTML and `gen_resources` JSON registration were delibera
 
 ## Build
 
-`python build.py --python27 C:/Python27/python.exe`, or run the GitHub Actions workflow.
+`python build.py --python27 C:/Python27/python.exe`.
 
 ## Verification status
 
-**Source/API implementation is grounded in working reference code, but not yet validated in an actual WoT client for this mod.** The build workflow must pass before releasing. No claim of successful in-game integration is made.
+**Source/API implementation is grounded in working reference code, but not yet validated in an actual WoT client for this mod.** No claim of successful in-game integration is made.
 
 If a sub-view's OpenWG injection slot is occupied by another mod, x5 yields rather than clobbering it. This may hide x5 when all candidate sub-view slots are occupied.

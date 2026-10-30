@@ -12,7 +12,12 @@ function dataModel() {
 function invoke(name, args) {
     const direct = observer.model && observer.model.x5Data;
     let target = direct && typeof direct[name] === "function" ? direct : dataModel();
-    if (target && typeof target[name] === "function") target[name](args || {});
+    if (target && typeof target[name] === "function") {
+        try { target[name](args || {}); }
+        catch (error) { console.error("[x5] " + name + " failed", error); }
+    } else {
+        console.error("[x5] missing ViewModel command: " + name);
+    }
 }
 function viewport() {
     return { w: window.innerWidth || 0, h: window.innerHeight || 0 };
@@ -57,15 +62,16 @@ function render() {
     }
 }
 
-// Port of the MoE Calculator garage widget's Ctrl+drag implementation.
-// Document CAPTURE, target ownership, local DOM motion and one final Wulf command.
+// Document capture gives this widget ownership only when it received the hit.
+// Move locally, then send the final position through the Wulf command.
 function installDrag() {
     if (initialized) return;
     initialized = true;
     document.addEventListener("mousedown", function (e) {
         const root = document.getElementById(ID);
         if (!root || root.style.display === "none") return;
-        if (!e.ctrlKey) return;
+        // GameFace builds may omit button; reject a known non-left button.
+        if (e.button !== undefined && e.button !== 0) return;
         if (!root.contains(e.target)) return;
         e.stopImmediatePropagation();
         e.preventDefault();
@@ -82,6 +88,8 @@ function installDrag() {
         root._dragging = true;
         root.style.cursor = "move";
         const onMove = function (ev) {
+            moved = true;
+            if (ev.preventDefault) ev.preventDefault();
             const w = window.innerWidth || 0;
             const h = window.innerHeight || 0;
             let cx = ev.clientX - offX;
@@ -96,13 +104,17 @@ function installDrag() {
             root.style.left = Math.round(cx) + "px";
             root.style.top = Math.round(cy) + "px";
         };
+        let moved = false;
         const onUp = function () {
             document.removeEventListener("mousemove", onMove, true);
             document.removeEventListener("mouseup", onUp, true);
+            window.removeEventListener("blur", onUp);
             root._dragging = false;
             root.style.cursor = "";
+            if (!moved) return;
             const r = root.getBoundingClientRect();
             const vp = viewport();
+            if (!vp.w || !vp.h) return;
             invoke("setPosition", {
                 x: Math.max(1, Math.round(r.left)),
                 y: Math.max(1, Math.round(r.top)),
@@ -111,6 +123,7 @@ function installDrag() {
         };
         document.addEventListener("mousemove", onMove, true);
         document.addEventListener("mouseup", onUp, true);
+        window.addEventListener("blur", onUp);
     }, true);
     window.addEventListener("resize", render);
 }
