@@ -22,6 +22,7 @@ The original standalone HTML and `gen_resources` JSON registration were delibera
 - `resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.js` — OpenWG ModelObserver, DOM widget, Ctrl+drag
 - `resources/in/gui/gameface/mods/x5/X5Counter/X5Counter.css` — scoped widget styling only
 - `build.json`, `build.py` — package metadata and Python 2.7 .wotmod builder
+- `.github/workflows/release.yml` — build and GitHub Release workflow
 
 ## Sources inspected
 
@@ -33,7 +34,7 @@ The original standalone HTML and `gen_resources` JSON registration were delibera
 
 ## Build
 
-`python build.py --python27 C:/Python27/python.exe`.
+`python build.py --python27 C:/Python27/python.exe`, or run the GitHub Actions workflow.
 
 ## Verification status
 
