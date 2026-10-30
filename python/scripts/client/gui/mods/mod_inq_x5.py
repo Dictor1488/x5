@@ -84,7 +84,7 @@ class CounterVM(ViewModel):
     __slots__ = ('onPositionChanged',)
 
     def __init__(self):
-        super(CounterVM, self).__init__(properties=4, commands=1)
+        super(CounterVM, self).__init__(properties=6, commands=1)
 
     def _initialize(self):
         super(CounterVM, self)._initialize()
@@ -92,6 +92,8 @@ class CounterVM(ViewModel):
         self._addStringProperty('count', '0')
         self._addNumberProperty('posX', 0)
         self._addNumberProperty('posY', 0)
+        self._addNumberProperty('posW', 0)
+        self._addNumberProperty('posH', 0)
         self.onPositionChanged = self._addCommand('onPositionChanged')
 
     def setState(self, visible, count, pos):
@@ -99,6 +101,8 @@ class CounterVM(ViewModel):
         self._setString(1, str(count))
         self._setNumber(2, pos['x'])
         self._setNumber(3, pos['y'])
+        self._setNumber(4, pos['w'])
+        self._setNumber(5, pos['h'])
 
 
 class HostVM(ViewModel):
