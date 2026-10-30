@@ -16,4 +16,4 @@ Run `python build.py --python27 C:/Python27/python.exe`, or the GitHub Actions w
 
 ## Validation
 
-The source has not been tested in a live World of Tanks client. Dragging, return from battle, and token parity require in-game verification.
+Dragging was confirmed working by the mod author in WoT 2.4.1. Return-from-battle behavior and token parity still require separate verification.
