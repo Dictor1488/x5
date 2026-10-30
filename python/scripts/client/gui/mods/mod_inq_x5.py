@@ -151,17 +151,22 @@ def _on_sync(*args, **kwargs):
 
 def _subscribe():
     global _subscribed, _lobby_machine
-    if _subscribed:
-        return
     try:
-        cache = dependency.instance(IItemsCache)
-        cache.onSyncCompleted += _on_sync
-        _subscribed = True
+        if not _subscribed:
+            cache = dependency.instance(IItemsCache)
+            cache.onSyncCompleted += _on_sync
+            _subscribed = True
         from gui.Scaleform.lobby_entry import getLobbyStateMachine
         machine = getLobbyStateMachine()
-        if machine is not None and machine is not _lobby_machine:
-            machine.onVisibleRouteChanged += _refresh
+        if machine is not _lobby_machine:
+            if _lobby_machine is not None:
+                try:
+                    _lobby_machine.onVisibleRouteChanged -= _refresh
+                except Exception:
+                    pass
             _lobby_machine = machine
+            if machine is not None:
+                machine.onVisibleRouteChanged += _refresh
     except Exception:
         LOG.exception('Unable to subscribe to item cache')
 
@@ -171,14 +176,13 @@ def _mount(presenter, name):
     host = presenter.getViewModel()
     if host is None:
         return
-    if _active is not None:
-        if _active[0] is host:
-            _refresh()
-            return
-        # One injected host per garage mount. The same presenter may remount
-        # after a battle with a new VM; other presenters must not duplicate it.
-        if _selected_host != name:
-            return
+    if _active is not None and _active[0] is host:
+        _subscribe()
+        _refresh()
+        return
+    # A newly created hangar host supersedes the VM from the previous visit.
+    # In particular do not pin the old presenter name across a battle.
+    # Once mounted, ignore redundant callbacks for the same host only.
     # OpenWG's ModInjectModel is single-owner per subview. Never replace another mod.
     try:
         if '"ModInjectModel"' in host.proxy.toString():
