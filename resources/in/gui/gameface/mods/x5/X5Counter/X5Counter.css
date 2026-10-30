@@ -15,7 +15,7 @@
   color: #f2ce6a;
   font-family: "$FieldFont", Arial, sans-serif;
   cursor: move;
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
   transform: translateZ(0);
 }
