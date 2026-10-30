@@ -66,67 +66,65 @@ function render() {
 // Move locally, then send the final position through the Wulf command.
 function installDrag() {
     if (initialized) return;
+    const root = ensureRoot();
     initialized = true;
-    document.addEventListener("mousedown", function (e) {
-        const root = document.getElementById(ID);
-        if (!root || root.style.display === "none") return;
-        // GameFace builds may omit button; reject a known non-left button.
+
+    // Gameface's documented mouse-driven drag pattern: begin on the element,
+    // track movement on the document and finish on mouse release.
+    root.addEventListener("mousedown", function (e) {
+        if (root.style.display === "none") return;
         if (e.button !== undefined && e.button !== 0) return;
-        if (!root.contains(e.target)) return;
-        e.stopImmediatePropagation();
         if (e.preventDefault) e.preventDefault();
-        console.info("[x5] drag start");
-        const r0 = root.getBoundingClientRect();
-        const boxW = r0.width, boxH = r0.height;
-        const offX = e.clientX - r0.left;
-        const offY = e.clientY - r0.top;
-        const startLeft = Math.round(r0.left);
-        const startTop = Math.round(r0.top);
+        if (e.stopPropagation) e.stopPropagation();
+
+        const bounds = root.getBoundingClientRect();
+        const startX = e.clientX, startY = e.clientY;
+        const initialLeft = bounds.left, initialTop = bounds.top;
+        const boxW = bounds.width, boxH = bounds.height;
+        let moved = false;
+
+        // Fixed-position widget switches from its CSS default to a pixel anchor.
         root.style.right = "auto";
         root.style.bottom = "auto";
-        root.style.left = startLeft + "px";
-        root.style.top = startTop + "px";
+        root.style.left = Math.round(initialLeft) + "px";
+        root.style.top = Math.round(initialTop) + "px";
         root._dragging = true;
-        root.style.cursor = "move";
-        let moved = false;
-        const onMove = function (ev) {
-            moved = true;
+
+        function onMove(ev) {
             if (ev.preventDefault) ev.preventDefault();
-            const w = window.innerWidth || 0;
-            const h = window.innerHeight || 0;
-            let cx = ev.clientX - offX;
-            let cy = ev.clientY - offY;
-            if (w) cx = Math.max(0, Math.min(w - boxW, cx));
-            if (h) cy = Math.max(1, Math.min(h - boxH, cy));
+            const vp = viewport();
+            const dx = ev.clientX - startX, dy = ev.clientY - startY;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+            let x = clamp(initialLeft + dx, 0, Math.max(0, vp.w - boxW));
+            let y = clamp(initialTop + dy, 1, Math.max(1, vp.h - boxH));
             if (ev.shiftKey) {
-                const dx = cx - startLeft, dy = cy - startTop;
-                if (Math.abs(dx) >= Math.abs(dy)) cy = startTop;
-                else cx = startLeft;
+                if (Math.abs(dx) >= Math.abs(dy)) y = initialTop;
+                else x = initialLeft;
             }
-            root.style.left = Math.round(cx) + "px";
-            root.style.top = Math.round(cy) + "px";
-        };
-        const onUp = function () {
+            root.style.left = Math.round(x) + "px";
+            root.style.top = Math.round(y) + "px";
+        }
+
+        function onUp() {
             document.removeEventListener("mousemove", onMove, true);
             document.removeEventListener("mouseup", onUp, true);
             window.removeEventListener("blur", onUp);
             root._dragging = false;
-            root.style.cursor = "";
             if (!moved) return;
-            const r = root.getBoundingClientRect();
             const vp = viewport();
+            const rect = root.getBoundingClientRect();
             if (!vp.w || !vp.h) return;
-            console.info("[x5] drag end", Math.round(r.left), Math.round(r.top));
             invoke("setPosition", {
-                x: Math.max(1, Math.round(r.left)),
-                y: Math.max(1, Math.round(r.top)),
+                x: Math.max(1, Math.round(rect.left)),
+                y: Math.max(1, Math.round(rect.top)),
                 w: vp.w, h: vp.h
             });
-        };
+        }
+
         document.addEventListener("mousemove", onMove, true);
         document.addEventListener("mouseup", onUp, true);
         window.addEventListener("blur", onUp);
-    }, true);
+    });
     window.addEventListener("resize", render);
 }
 
