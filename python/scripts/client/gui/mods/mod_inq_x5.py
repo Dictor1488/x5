@@ -84,7 +84,7 @@ def _count():
 
 class X5Data(ViewModel):
     def __init__(self):
-        super(X5Data, self).__init__(properties=7, commands=1)
+        super(X5Data, self).__init__(properties=7, commands=2)
 
     def _initialize(self):
         super(X5Data, self)._initialize()
@@ -96,6 +96,7 @@ class X5Data(ViewModel):
         self._addNumberProperty('rev', 0)
         self._addBoolProperty('visible', False)
         self.setPosition = self._addCommand('setPosition')
+        self.dragDebug = self._addCommand('dragDebug')
         
 
     def setData(self, count, pos, rev, visible):
@@ -106,6 +107,10 @@ class X5Data(ViewModel):
         self._setNumber(4, pos['h'])
         self._setNumber(5, rev)
         self._setBool(6, bool(visible))
+
+
+def _on_drag_debug(arg=None, *unused):
+    LOG.warning('X5-DRAG DEBUG: %s', repr(arg))
 
 
 def _on_position(arg=None, *unused):
@@ -215,6 +220,7 @@ def _mount(root):
         if _active is None or _active[0] is not host:
             _active = (host, host.x5Data)
             host.x5Data.setPosition += _on_position
+            host.x5Data.dragDebug += _on_drag_debug
         _subscribe()
         _refresh()
     except Exception:
