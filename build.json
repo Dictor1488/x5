@@ -4,9 +4,5 @@
     "version": "0.3.0",
     "name": "INQ x5 Counter",
     "description": "Gameface x5 token counter for the default WoT hangar"
-  },
-  "package": {
-    "compression": "stored",
-    "compilePython": true
   }
 }
