@@ -74,7 +74,8 @@ function installDrag() {
         if (e.button !== undefined && e.button !== 0) return;
         if (!root.contains(e.target)) return;
         e.stopImmediatePropagation();
-        e.preventDefault();
+        if (e.preventDefault) e.preventDefault();
+        console.info("[x5] drag start");
         const r0 = root.getBoundingClientRect();
         const boxW = r0.width, boxH = r0.height;
         const offX = e.clientX - r0.left;
@@ -87,6 +88,7 @@ function installDrag() {
         root.style.top = startTop + "px";
         root._dragging = true;
         root.style.cursor = "move";
+        let moved = false;
         const onMove = function (ev) {
             moved = true;
             if (ev.preventDefault) ev.preventDefault();
@@ -104,7 +106,6 @@ function installDrag() {
             root.style.left = Math.round(cx) + "px";
             root.style.top = Math.round(cy) + "px";
         };
-        let moved = false;
         const onUp = function () {
             document.removeEventListener("mousemove", onMove, true);
             document.removeEventListener("mouseup", onUp, true);
@@ -115,6 +116,7 @@ function installDrag() {
             const r = root.getBoundingClientRect();
             const vp = viewport();
             if (!vp.w || !vp.h) return;
+            console.info("[x5] drag end", Math.round(r.left), Math.round(r.top));
             invoke("setPosition", {
                 x: Math.max(1, Math.round(r.left)),
                 y: Math.max(1, Math.round(r.top)),
