@@ -1,9 +1,9 @@
 {
   "info": {
     "id": "me.inq.x5",
-    "version": "0.2.5",
+    "version": "0.3.0",
     "name": "INQ x5 Counter",
-    "description": "OpenWG Gameface injected x5 XP bonus counter for WoT garage"
+    "description": "Gameface x5 token counter for the default WoT hangar"
   },
   "package": {
     "compression": "stored",
