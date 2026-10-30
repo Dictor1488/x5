@@ -31,7 +31,7 @@ function place(root,x,y) {
     root.style.top=p.y+"rem";
     return p;
 }
-function modelPosition(root,m) {
+function modelPosition(m) {
     const x=Number(m.posX),y=Number(m.posY);
     if(Number.isFinite(x)&&Number.isFinite(y)&&x>0&&y>0) {
         const storedW=Number(m.posW)||0,storedH=Number(m.posH)||0,s=size();
@@ -153,7 +153,7 @@ function render() {
     root.style.display="flex";
     root.querySelector(".inq-x5-num").textContent=String(m.count);
     if(dragging)return;
-    const current=modelPosition(root,m);
+    const current=modelPosition(m);
     if(pending&&Math.abs(current.x-pending.x)<1&&Math.abs(current.y-pending.y)<1)
         pending=null;
     const p=pending||current;
