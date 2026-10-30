@@ -8,12 +8,19 @@ import os
 import time
 
 from frameworks.wulf import ViewModel
+from gui.impl.pub import ViewImpl
+from gui.impl.pub.view_component import ViewComponent
+from gui.impl.gen import R
+from gui.impl.lobby.hangar.states import DefaultHangarState
+from gui.Scaleform.lobby_entry import getLobbyStateMachine
+from openwg_gameface import gf_mod_inject
 from helpers import dependency
 from skeletons.gui.shared import IItemsCache
 
 LOG = logging.getLogger('INQ.x5')
 CONFIG = os.path.join('mods', 'configs', 'inq', 'x5.json')
 COUI = 'coui://gui/gameface/mods/x5/X5Counter'
+LAYOUT_ID = 'X5CounterView'
 _active = None
 _selected_host = None
 _patched = []
@@ -89,7 +96,7 @@ class X5Data(ViewModel):
         self._addNumberProperty('rev', 0)
         self._addBoolProperty('visible', False)
         self.setPosition = self._addCommand('setPosition')
-        self.setPosition += _on_position
+        
 
     def setData(self, count, pos, rev, visible):
         self._setString(0, str(count))
@@ -120,12 +127,39 @@ def _on_position(arg=None, *unused):
         LOG.exception('Invalid x5 position command')
 
 
+
+class X5HostModel(ViewModel):
+    __slots__ = ('x5Data',)
+
+    def __init__(self):
+        self.x5Data = None
+        super(X5HostModel, self).__init__(properties=2, commands=0)
+
+    def _initialize(self):
+        super(X5HostModel, self)._initialize()
+        self.x5Data = X5Data()
+        self._addViewModelProperty('x5Data', self.x5Data)
+        gf_mod_inject(self, 'X5Counter',
+                      styles=[COUI + '/X5Counter.css'],
+                      modules=[COUI + '/X5Counter.js'])
+
+
+class X5GarageView(ViewComponent):
+    viewLayoutID = R.mods.dictor.x5.X5CounterView
+
+    def __init__(self):
+        super(X5GarageView, self).__init__(layoutID=self.viewLayoutID(),
+                                           model=X5HostModel)
+
+
+_original_on_loaded = None
+
+
 def _in_garage():
     try:
-        from gui.Scaleform.lobby_entry import getLobbyStateMachine
         machine = getLobbyStateMachine()
         state = machine.visibleState if machine is not None else None
-        return state is not None and (state.getStateID() or '').endswith('hangar/{root}')
+        return isinstance(state, DefaultHangarState)
     except Exception:
         return False
 
@@ -153,10 +187,8 @@ def _subscribe():
     global _subscribed, _lobby_machine
     try:
         if not _subscribed:
-            cache = dependency.instance(IItemsCache)
-            cache.onSyncCompleted += _on_sync
+            dependency.instance(IItemsCache).onSyncCompleted += _on_sync
             _subscribed = True
-        from gui.Scaleform.lobby_entry import getLobbyStateMachine
         machine = getLobbyStateMachine()
         if machine is not _lobby_machine:
             if _lobby_machine is not None:
@@ -168,77 +200,51 @@ def _subscribe():
             if machine is not None:
                 machine.onVisibleRouteChanged += _refresh
     except Exception:
-        LOG.exception('Unable to subscribe to item cache')
+        LOG.exception('Unable to subscribe x5 updates')
 
 
-def _mount(presenter, name):
-    global _active, _selected_host
-    host = presenter.getViewModel()
-    if host is None:
-        return
-    if _active is not None and _active[0] is host:
-        _subscribe()
-        _refresh()
-        return
-    # A newly created hangar host supersedes the VM from the previous visit.
-    # In particular do not pin the old presenter name across a battle.
-    # Once mounted, ignore redundant callbacks for the same host only.
-    # OpenWG's ModInjectModel is single-owner per subview. Never replace another mod.
+def _mount(root):
+    global _active
     try:
-        if '"ModInjectModel"' in host.proxy.toString():
-            return
-    except Exception:
-        LOG.exception('Unable to check Gameface subview injection occupancy')
-        return
-    try:
-        import openwg_gameface
-        openwg_gameface.gf_mod_inject(
-            host, 'X5Counter',
-            styles=[COUI + '/X5Counter.css'],
-            modules=[COUI + '/X5Counter.js'])
-        model = X5Data()
-        host._addViewModelProperty('x5Data', model)
-        _active = (host, model)
-        _selected_host = name
+        layout = X5GarageView.viewLayoutID()
+        child = root.getChildView(layout)
+        if child is None:
+            child = X5GarageView()
+            root.setChildView(layout, child)
+        host = child.getViewModel()
+        if _active is None or _active[0] is not host:
+            _active = (host, host.x5Data)
+            host.x5Data.setPosition += _on_position
         _subscribe()
         _refresh()
     except Exception:
-        LOG.exception('X5 Gameface injection failed')
+        LOG.exception('Unable to mount x5 garage component')
 
 
-def _install():
-    _read_position()
-    for module_path, class_name in _candidates:
-        try:
-            module = __import__(module_path, fromlist=[class_name])
-            presenter = getattr(module, class_name)
-            if getattr(presenter, '_inq_x5_hooked', False):
-                continue
-            original = presenter._onLoading
-            # Keep original bound to each wrapper, not last value of loop.
-            def make_wrapper(fn, presenter_name):
-                def wrapped(self, *args, **kwargs):
-                    result = fn(self, *args, **kwargs)
-                    _mount(self, presenter_name)
-                    return result
-                return wrapped
-            presenter._onLoading = make_wrapper(original, class_name)
-            presenter._inq_x5_hooked = True
-            _patched.append((presenter, original))
-        except Exception:
-            LOG.exception('Cannot hook garage presenter: %s', class_name)
+def _on_loaded(instance, *args, **kwargs):
+    result = _original_on_loaded(instance, *args, **kwargs)
+    try:
+        if instance.layoutID == R.views.mono.hangar.main():
+            _mount(instance)
+    except Exception:
+        LOG.exception('X5 hangar root detection failed')
+    return result
 
 
 def init():
-    _install()
+    global _original_on_loaded
+    _read_position()
+    if _original_on_loaded is None:
+        _original_on_loaded = ViewImpl._onLoaded
+        ViewImpl._onLoaded = _on_loaded
 
 
 def fini():
-    global _active, _subscribed, _selected_host, _lobby_machine
-    for presenter, original in _patched:
-        presenter._onLoading = original
-        presenter._inq_x5_hooked = False
-    del _patched[:]
+    global _active, _subscribed, _lobby_machine, _original_on_loaded
+    if _original_on_loaded is not None:
+        if ViewImpl._onLoaded is _on_loaded:
+            ViewImpl._onLoaded = _original_on_loaded
+        _original_on_loaded = None
     if _subscribed:
         try:
             dependency.instance(IItemsCache).onSyncCompleted -= _on_sync
@@ -252,4 +258,3 @@ def fini():
             pass
         _lobby_machine = None
     _active = None
-    _selected_host = None
