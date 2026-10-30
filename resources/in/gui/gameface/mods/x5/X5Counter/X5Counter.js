@@ -33,8 +33,11 @@ function place(root,x,y) {
 }
 function modelPosition(root,m) {
     const x=Number(m.posX),y=Number(m.posY);
-    if(Number.isFinite(x)&&Number.isFinite(y)&&x>0&&y>0)
-        return {x:x,y:y};
+    if(Number.isFinite(x)&&Number.isFinite(y)&&x>0&&y>0) {
+        const storedW=Number(m.posW)||0,storedH=Number(m.posH)||0,s=size();
+        return {x:storedW>0?x*s.w/storedW:x,
+                y:storedH>0?y*s.h/storedH:y};
+    }
     return {x:320,y:200};
 }
 function sendPosition(p) {
@@ -158,7 +161,7 @@ function render() {
 }
 function state() {
     const m=vm();
-    return m?JSON.stringify([m.visible,m.count,m.posX,m.posY]):null;
+    return m?JSON.stringify([m.visible,m.count,m.posX,m.posY,m.posW,m.posH]):null;
 }
 function update() {
     if(renderFrame!==null)return;
