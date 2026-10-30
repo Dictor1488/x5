@@ -15,14 +15,17 @@
   color: #f2ce6a;
   font-family: "$FieldFont", Arial, sans-serif;
   cursor: move;
-  pointer-events: auto;
+  pointer-events: none;
   user-select: none;
   transform: translateZ(0);
 }
 #inq-x5-root .inq-x5-hit-zone {
   position: absolute;
-  inset: 0;
-  z-index: 10;
+  left: 0;
+  top: 0;
+  width: 115rem;
+  height: 48rem;
+  z-index: 100;
   cursor: move;
   pointer-events: auto;
 }
