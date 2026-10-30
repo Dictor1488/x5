@@ -1,0 +1,11 @@
+[
+    {
+        "type": "Layout",
+        "path": "coui://gui/gameface/mods/x5/X5Counter/X5CounterView.html",
+        "parameters": {
+            "entrance": "X5CounterView",
+            "impl": "gameface"
+        },
+        "id": "R.mods.dictor.x5.X5CounterView"
+    }
+]
