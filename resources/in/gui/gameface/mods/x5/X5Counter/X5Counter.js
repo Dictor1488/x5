@@ -46,7 +46,7 @@ function rootElement() {
     if(root)return root;
     root=document.createElement("div");
     root.id=ID;
-    root.innerHTML='<span class="inq-x5-ring">×5</span><span class="inq-x5-num">—</span>';
+    root.innerHTML='<span class="inq-x5-ring">×5</span><span class="inq-x5-num">—</span><div class="inq-x5-hit-zone"></div>';
     document.body.appendChild(root);
     bind(root);
     return root;
