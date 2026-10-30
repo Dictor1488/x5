@@ -11,11 +11,6 @@ function model() {
     const host = observer.model;
     return host && host.x5Data;
 }
-function debug(stage, extra) {
-    const m=model();
-    try { if(m && typeof m.dragDebug==="function") m.dragDebug({stage:stage,detail:String(extra||"")}); }
-    catch(e) { console.error("[x5] drag debug failed",e); }
-}
 function callPosition(p) {
     const m = model();
     if (m && typeof m.setPosition === "function") {
@@ -105,7 +100,6 @@ function bind(root) {
     document.addEventListener("mousedown",e=>{
         const current=document.getElementById(ID);
         if(!current||current.style.display==="none"||!current.contains(e.target)||Number(e.button)!==0)return;
-        debug('down','target='+String(e.target&&e.target.className));
         const r=rectRem(current);
         grabX=rem(e.clientX)-r.x;grabY=rem(e.clientY)-r.y;
         pointerDown={x:e.clientX,y:e.clientY,moved:false};dragging=true;
@@ -113,7 +107,6 @@ function bind(root) {
         unbindCapture();
         const onMove=ev=>{
             if(!dragging)return;
-            if(!pointerDown.moved) debug('move','x='+ev.clientX+' y='+ev.clientY);
             if(Math.abs(ev.clientX-pointerDown.x)+Math.abs(ev.clientY-pointerDown.y)>1) pointerDown.moved=true;
             nextPoint={x:ev.clientX,y:ev.clientY};
             if(dragFrame===null) dragFrame=requestAnimationFrame(()=>{
@@ -126,7 +119,6 @@ function bind(root) {
         const onUp=ev=>{
             if(Number(ev.button)!==0)return;
             if(dragging)drawDrag(current,{x:ev.clientX,y:ev.clientY});
-            debug('up','moved='+String(pointerDown&&pointerDown.moved));
             unbindCapture();endDrag(current,true);ev.preventDefault();
         };
         document.addEventListener("mousemove",onMove,true);
@@ -154,7 +146,6 @@ function updated() {
 }
 function start() {
     rootElement();
-    debug('start','Gameface JS ready');
     observer.onUpdate(updated);
     observer.subscribe();
     engine.on("viewEnv.onDataChanged",updated);
